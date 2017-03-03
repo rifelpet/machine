@@ -3,6 +3,7 @@ package provision
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/drivers"
@@ -65,6 +66,14 @@ func (provisioner *UbuntuSystemdProvisioner) Package(name string, action pkgacti
 	switch name {
 	case "docker":
 		name = "docker-engine"
+	}
+
+	if action == pkgaction.Install {
+		existsOutput, err := provisioner.SSHCommand(fmt.Sprintf("dpkg -l '%s'", name))
+		if err == nil && strings.Contains(existsOutput, fmt.Sprintf("\nii  %s", name)) {
+			log.Debugf("Package already installed, skipping. name=%s", name)
+			return nil
+		}
 	}
 
 	if updateMetadata {
